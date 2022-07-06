@@ -1,19 +1,29 @@
 package com.hx.toolmodules
 
+import android.Manifest
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.lifecycle.ViewModelProvider
 import com.hx.networkmodule.NetworkUtils
 import com.hx.toolmodules.network.TestService
+import com.permissionx.guolindev.PermissionX
+import com.permissionx.guolindev.callback.RequestCallback
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.flow
 
 class MainActivity : AppCompatActivity() {
-    val netWork = NetworkUtils("http://192.168.3.224:8300/",TestService::class.java)
+    val vm by lazy { ViewModelProvider(this).get(MainViewModel::class.java) }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        netWork.connect(flow { emit(netWork.start().login(LoginData("",""))) })
+        PermissionX.init(this).permissions(
+            Manifest.permission.INTERNET
+        ).request { allGranted, grantedList, deniedList ->
+            if (allGranted) {
+                vm.login()
+            }
+        }
     }
-
 }
 
 data class LoginEntity(
@@ -44,6 +54,6 @@ data class LoginEntity(
 )
 
 data class LoginData(
-    val loginName:String,
-    val password:String
+    val loginName: String,
+    val password: String
 )

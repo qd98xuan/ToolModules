@@ -21,12 +21,16 @@ class NetworkUtils<T> constructor(baseUrl: String,service: Class<T>) {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
     fun start(): T = getRetorfit().create(service)
-    fun <T> connect(flow: Flow<T>,viewModeScope:CoroutineScope,resp:(success:Boolean,data:T?,error:String)->Unit ) {
+    fun <T> connect(flow: Flow<BaseResp<T>>,viewModeScope:CoroutineScope,resp:(resp:Resp<T>)->Unit ) {
         viewModeScope.launch(Dispatchers.IO){
             flow.catch {
-                resp(false,null,it.message.toString())
+                resp(Resp(false,null,it.message.toString()))
             }.collect {
-                resp(true,it,"")
+                if (it.code == 200){
+                    resp(Resp(true,it.data,""))
+                }else{
+                    resp(Resp(false,null,"${it.code}-${it.msg}"))
+                }
             }
         }
     }
@@ -36,4 +40,10 @@ data class BaseResp<T>(
     val code: Int,
     val data: T,
     val msg: String
+)
+
+data class Resp<T>(
+    val isSuccess:Boolean,
+    val data:T?,
+    val error:String
 )
